@@ -1,23 +1,24 @@
-# Etapa de construcción
+# Usa una imagen base de Go
 FROM golang:1.19-alpine AS build
 
-# Establecer el directorio de trabajo en el contenedor
+# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copiar el archivo app.go al contenedor
-COPY app.go .
+# Copia los archivos go.mod y go.sum primero, para aprovechar la caché de Docker
+COPY go.mod ./
 
-# Compilar el binario de la aplicación
+# Instala las dependencias
+RUN go mod download
+
+# Copia el resto de los archivos
+COPY . .
+
+# Compila la aplicación
 RUN go build -o app .
 
 # Imagen final
 FROM alpine:latest
-
-# Copiar el binario desde la etapa de construcción
-COPY --from=build /app/app /app
-
-# Exponer el puerto 8080
+WORKDIR /root/
+COPY --from=build /app/app .
 EXPOSE 8080
-
-# Comando para ejecutar la aplicación
-CMD ["/app"]
+CMD ["./app"]
